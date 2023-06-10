@@ -2,6 +2,8 @@ use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
+use std::sync::{RwLockReadGuard, RwLockWriteGuard};
+use anyhow::Context;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -61,26 +63,125 @@ impl TodoRepositoryForMemory {
             store: Arc::default(),
         }
     }
+
+    fn write_store_ref(&self) -> RwLockWriteGuard<TodoDatas> {
+        self.store.write().unwrap()
+    }
+
+    fn read_store_ref(&self) -> RwLockReadGuard<TodoDatas> {
+        self.store.read().unwrap()
+    }
 }
 
 impl TodoRepository for TodoRepositoryForMemory {
     fn create(&self, payload: CreateTodo) -> Todo {
-        todo!();
+        let mut store = self.write_store_ref();
+        let id = (store.len() + 1) as i32;
+        let todo = Todo::new(id, payload.text);
+        store.insert(id, todo.clone());
+        todo
     }
 
     fn find(&self, id: i32) -> Option<Todo> {
-        todo!();
+        let store = self.read_store_ref();
+        store.get(&id).cloned()
     }
 
     fn all(&self) -> Vec<Todo> {
-        todo!();
+        self.read_store_ref().values().cloned().collect()
     }
 
     fn update(&self, id: i32, payload: UpdateTodo) -> anyhow::Result<Todo> {
-        todo!();
+        let mut store = self.write_store_ref();
+        let todo = store.get(&id).with_context(|| RepositoryError::NotFound(id))?;
+        let text = payload.text.unwrap_or(todo.text.clone());
+        let completed = payload.completed.unwrap_or(todo.completed);
+        let todo = Todo { id, text, completed };
+        store.insert(id, todo.clone());
+        Ok(todo)
     }
 
     fn delete(&self, id: i32) -> anyhow::Result<()> {
-        todo!();
+        let mut store = self.write_store_ref();
+        store.remove(&id);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn todo_create() {
+        let text = "todo text".to_string();
+        let id = 1;
+        let expected = Todo::new(id, text.clone());
+
+        let repository = TodoRepositoryForMemory::new();
+        let todo = repository.create(CreateTodo { text });
+        assert_eq!(expected, todo);
+    }
+
+    #[test]
+    fn todo_find() {
+        let text = "todo text".to_string();
+        let id = 1;
+        let expected = Todo::new(id, text.clone());
+
+        let repository = TodoRepositoryForMemory::new();
+        repository.create(CreateTodo { text });
+        let todo = repository.find(id).unwrap();
+        assert_eq!(expected, todo);
+    }
+
+    #[test]
+    fn todo_all() {
+        let text = "todo text".to_string();
+        let id = 1;
+        let expected = Todo::new(id, text.clone());
+        let repository = TodoRepositoryForMemory::new();
+        let _ = repository.create(CreateTodo { text });
+        let todo = repository.all();
+        assert_eq!(vec![expected], todo);
+    }
+
+    #[test]
+    fn todo_update() {
+        let text = "todo text".to_string();
+        let id = 1;
+        let repository = TodoRepositoryForMemory::new();
+        let _ = repository.create(CreateTodo { text: text.clone() });
+
+        let update_text = "update todo text".to_string();
+        let todo = repository
+            .update(
+                id,
+                UpdateTodo {
+                    text: Some(update_text.clone()),
+                    completed: Some(true),
+                },
+            )
+            .expect("failed update todo.");
+        assert_eq!(
+            Todo {
+                id,
+                text: update_text,
+                completed: true,
+            },
+            todo
+        );
+    }
+
+    #[test]
+    fn todo_delete() {
+        let text = "todo text".to_string();
+        let id = 1;
+        let repository = TodoRepositoryForMemory::new();
+        let _ = repository.create(CreateTodo { text: text.clone() });
+
+        let res = repository.delete(id);
+        assert!(res.is_ok());
+        assert_eq!(repository.read_store_ref().len(), 0);
     }
 }

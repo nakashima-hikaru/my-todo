@@ -11,3 +11,7 @@ pub async fn create_todo<T: TodoRepository>(
 
     (StatusCode::CREATED, Json(todo))
 }
+
+pub async fn find_todo<T: TodoRepository>(
+
+)

@@ -36,10 +36,6 @@ async fn root() -> &'static str {
 }
 
 
-
-
-
-
 #[cfg(test)]
 mod test {
     use super::*;
