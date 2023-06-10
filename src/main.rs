@@ -5,8 +5,6 @@ use axum::routing::{get, post};
 use axum::routing::Router;
 use std::net::SocketAddr;
 use std::env;
-use std::sync::{Arc};
-use axum::{Extension};
 use crate::handlers::create_todo;
 use crate::repositories::{TodoRepository, TodoRepositoryForMemory};
 
@@ -28,7 +26,7 @@ fn create_app<T: TodoRepository>(repository: T) -> Router {
     Router::new()
         .route("/", get(root))
         .route("/todos", post(create_todo::<T>))
-        .layer(Extension(Arc::new(repository)))
+        .with_state(repository)
 }
 
 async fn root() -> &'static str {
