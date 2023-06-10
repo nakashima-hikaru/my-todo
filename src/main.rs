@@ -84,6 +84,33 @@ mod test {
     }
 
     #[tokio::test]
+    async fn should_created_todo() {
+        let repository = TodoRepositoryForMemory::new();
+        let req = build_request_with_json(
+            "/todos",
+            Method::POST,
+            r#"{"text": "todo","completed": false}"#.to_string(),
+        );
+        let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        let todo = response_to_result::<Todo>(res).await;
+        let expected = Todo::new(1, "todo".to_string());
+        assert_eq!(expected, todo);
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn post_empty_text() {
+        let repository = TodoRepositoryForMemory::new();
+        let req = build_request_with_json(
+            "/todos",
+            Method::POST,
+            r#"{"text": "","completed": false}"#.to_string(),
+        );
+        let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        let _ = response_to_result::<Todo>(res).await;
+    }
+
+    #[tokio::test]
     async fn should_update_todo() {
         let expected = Todo::new(1, "should_update_todo".to_string());
 

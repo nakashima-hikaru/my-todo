@@ -7,6 +7,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use validator::Validate;
 
 #[derive(Debug, Error)]
 enum RepositoryError {
@@ -29,8 +30,10 @@ pub struct Todo {
     pub completed: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Validate)]
 pub struct CreateTodo {
+    #[validate(length(min = 1, message = "text must not be empty"))]
+    #[validate(length(max = 100, message = "text length exceeds the limit"))]
     text: String,
 }
 
@@ -41,8 +44,10 @@ impl CreateTodo {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Validate)]
 pub struct UpdateTodo {
+    #[validate(length(min = 1, message = "text must not be empty"))]
+    #[validate(length(max = 100, message = "text length exceeds the limit"))]
     text: Option<String>,
     completed: Option<bool>,
 }
