@@ -57,11 +57,11 @@ impl Todo {
     }
 }
 
-type TodoDatas = HashMap<i32, Todo>;
+type TodoData = HashMap<i32, Todo>;
 
 #[derive(Debug, Clone)]
 pub struct TodoRepositoryForMemory {
-    store: Arc<RwLock<TodoDatas>>,
+    store: Arc<RwLock<TodoData>>,
 }
 
 impl TodoRepositoryForMemory {
@@ -71,11 +71,11 @@ impl TodoRepositoryForMemory {
         }
     }
 
-    fn write_store_ref(&self) -> RwLockWriteGuard<TodoDatas> {
+    fn write_store_ref(&self) -> RwLockWriteGuard<TodoData> {
         self.store.write().unwrap()
     }
 
-    fn read_store_ref(&self) -> RwLockReadGuard<TodoDatas> {
+    fn read_store_ref(&self) -> RwLockReadGuard<TodoData> {
         self.store.read().unwrap()
     }
 }
