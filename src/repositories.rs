@@ -110,7 +110,7 @@ impl TodoRepository for TodoRepositoryForMemory {
 
     fn delete(&self, id: i32) -> anyhow::Result<()> {
         let mut store = self.write_store_ref();
-        store.remove(&id);
+        store.remove(&id).ok_or(RepositoryError::NotFound(id))?;
         Ok(())
     }
 }

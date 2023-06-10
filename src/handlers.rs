@@ -37,3 +37,14 @@ pub async fn find_todo<T: TodoRepository>(
     let todo = repository.find(id).ok_or(StatusCode::NOT_FOUND)?;
     Ok((StatusCode::OK, Json(todo)))
 }
+
+pub async fn delete_todo<T: TodoRepository>(
+    Path(id): Path<i32>,
+    State(repository): State<Arc<T>>,
+) -> StatusCode {
+    if repository.delete(id).is_ok() {
+        StatusCode::NO_CONTENT
+    } else {
+        StatusCode::NOT_FOUND
+    }
+}

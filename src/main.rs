@@ -1,7 +1,7 @@
 mod handlers;
 mod repositories;
 
-use crate::handlers::{all_todo, create_todo, find_todo, update_todo};
+use crate::handlers::{all_todo, create_todo, delete_todo, find_todo, update_todo};
 use crate::repositories::{TodoRepository, TodoRepositoryForMemory};
 use axum::routing::Router;
 use axum::routing::{get, patch, post};
@@ -29,7 +29,7 @@ fn create_app<T: TodoRepository>(repository: Arc<T>) -> Router {
         .route("/", get(root))
         .route("/todos", post(create_todo::<T>).get(all_todo::<T>))
         .with_state(Arc::clone(&repository))
-        .route("/todos/:id", patch(update_todo::<T>).get(find_todo::<T>))
+        .route("/todos/:id", patch(update_todo::<T>).get(find_todo::<T>).delete(delete_todo::<T>))
         .with_state(Arc::clone(&repository))
 }
 
@@ -127,5 +127,25 @@ mod test {
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
         let body: String = String::from_utf8(bytes.to_vec()).unwrap();
         assert!(body.is_empty())
+    }
+
+    #[tokio::test]
+    async fn should_delete_todo() {
+        let payload = CreateTodo::new("temp".to_string());
+        let repository = TodoRepositoryForMemory::new();
+        repository.create(payload);
+        let req = build_request_with_json("/todos/1", Method::DELETE, String::default());
+        let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        assert_eq!(StatusCode::NO_CONTENT, res.status());
+    }
+
+    #[tokio::test]
+    async fn should_not_delete_todo() {
+        let payload = CreateTodo::new("temp".to_string());
+        let repository = TodoRepositoryForMemory::new();
+        repository.create(payload);
+        let req = build_request_with_json("/todos/2", Method::DELETE, String::default());
+        let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        assert_eq!(StatusCode::NOT_FOUND, res.status());
     }
 }
