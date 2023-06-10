@@ -22,3 +22,10 @@ pub async fn update_todo<T: TodoRepository>(
         .or(Err(StatusCode::NOT_FOUND))?;
     Ok((StatusCode::CREATED, Json(todo)))
 }
+
+pub async fn all_todo<T: TodoRepository>(
+    State(repository): State<Arc<T>>,
+) -> impl IntoResponse{
+    let todo = repository.all();
+    (StatusCode::OK, Json(todo))
+}
