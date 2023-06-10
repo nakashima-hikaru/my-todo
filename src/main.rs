@@ -29,7 +29,12 @@ fn create_app<T: TodoRepository>(repository: Arc<T>) -> Router {
         .route("/", get(root))
         .route("/todos", post(create_todo::<T>).get(all_todo::<T>))
         .with_state(Arc::clone(&repository))
-        .route("/todos/:id", patch(update_todo::<T>).get(find_todo::<T>).delete(delete_todo::<T>))
+        .route(
+            "/todos/:id",
+            patch(update_todo::<T>)
+                .get(find_todo::<T>)
+                .delete(delete_todo::<T>),
+        )
         .with_state(Arc::clone(&repository))
 }
 

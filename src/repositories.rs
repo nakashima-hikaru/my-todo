@@ -1,9 +1,9 @@
+use anyhow::Context;
+use std::sync::{RwLockReadGuard, RwLockWriteGuard};
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
-use std::sync::{RwLockReadGuard, RwLockWriteGuard};
-use anyhow::Context;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -100,10 +100,16 @@ impl TodoRepository for TodoRepositoryForMemory {
 
     fn update(&self, id: i32, payload: UpdateTodo) -> anyhow::Result<Todo> {
         let mut store = self.write_store_ref();
-        let todo = store.get(&id).with_context(|| RepositoryError::NotFound(id))?;
+        let todo = store
+            .get(&id)
+            .with_context(|| RepositoryError::NotFound(id))?;
         let text = payload.text.unwrap_or(todo.text.clone());
         let completed = payload.completed.unwrap_or(todo.completed);
-        let todo = Todo { id, text, completed };
+        let todo = Todo {
+            id,
+            text,
+            completed,
+        };
         store.insert(id, todo.clone());
         Ok(todo)
     }

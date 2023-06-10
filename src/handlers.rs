@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use axum::extract::Path;
 use crate::repositories::{CreateTodo, TodoRepository, UpdateTodo};
+use axum::extract::Path;
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use std::sync::Arc;
 
 pub async fn create_todo<T: TodoRepository>(
     State(repository): State<Arc<T>>,
