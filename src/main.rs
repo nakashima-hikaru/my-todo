@@ -43,7 +43,7 @@ async fn root() -> &'static str {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use axum::body::Body;
     use axum::http;
@@ -51,6 +51,7 @@ mod test {
     use axum::response::Response;
     use http::Request;
     use serde::Deserialize;
+    use serde_json::json;
 
     use crate::repositories::{CreateTodo, Todo};
     use tower::ServiceExt;
@@ -67,13 +68,12 @@ mod test {
     async fn response_to_result<T: for<'a> Deserialize<'a>>(res: Response) -> T {
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
         let body: String = String::from_utf8(bytes.to_vec()).unwrap();
-        let todo: T = serde_json::from_str(&body)
-            .expect(&format!("cannot convert Todo instance. body: {}", body));
+        let todo: T = serde_json::from_str(&body).unwrap();
         todo
     }
 
     #[tokio::test]
-    async fn should_return_hello_world() {
+    async fn test_hello_world() {
         let req = Request::builder().uri("/").body(Body::empty()).unwrap();
         let repository = TodoRepositoryForMemory::new();
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
@@ -84,7 +84,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_created_todo() {
+    async fn test_create_todo() {
         let repository = TodoRepositoryForMemory::new();
         let req = build_request_with_json(
             "/todos",
@@ -99,7 +99,7 @@ mod test {
 
     #[tokio::test]
     #[should_panic]
-    async fn post_empty_text() {
+    async fn test_post_validation_empty() {
         let repository = TodoRepositoryForMemory::new();
         let req = build_request_with_json(
             "/todos",
@@ -111,7 +111,25 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_update_todo() {
+    #[should_panic]
+    async fn test_post_validation_too_long_text() {
+        let repository = TodoRepositoryForMemory::new();
+        let text = "a".repeat(101);
+        let body = json!({
+            "text": text,
+            "completed": false
+        }).to_string();
+        let req = build_request_with_json(
+            "/todos",
+            Method::POST,
+            body,
+        );
+        let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        let _ = response_to_result::<Todo>(res).await;
+    }
+
+    #[tokio::test]
+    async fn test_update_todo() {
         let expected = Todo::new(1, "should_update_todo".to_string());
 
         let repository = TodoRepositoryForMemory::new();
@@ -138,7 +156,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_find_todos() {
+    async fn test_find_todos() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);
@@ -149,7 +167,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_not_find_todos() {
+    async fn test_not_found_todos() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);
@@ -162,7 +180,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_delete_todo() {
+    async fn test_delete_todo() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);
@@ -172,7 +190,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_not_delete_todo() {
+    async fn test_not_deleted_todo() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);

@@ -15,7 +15,7 @@ enum RepositoryError {
     NotFound(i32),
 }
 
-pub trait TodoRepository: Clone + std::marker::Send + std::marker::Sync + 'static {
+pub trait TodoRepository: Clone + Send + Sync + 'static {
     fn create(&self, payload: CreateTodo) -> Todo;
     fn find(&self, id: i32) -> Option<Todo>;
     fn all(&self) -> Vec<Todo>;
@@ -127,11 +127,11 @@ impl TodoRepository for TodoRepositoryForMemory {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
-    fn todo_create() {
+    fn test_todo_create() {
         let text = "todo text".to_string();
         let id = 1;
         let expected = Todo::new(id, text.clone());
@@ -142,7 +142,7 @@ mod test {
     }
 
     #[test]
-    fn todo_find() {
+    fn test_todo_find() {
         let text = "todo text".to_string();
         let id = 1;
         let expected = Todo::new(id, text.clone());
@@ -154,7 +154,7 @@ mod test {
     }
 
     #[test]
-    fn todo_all() {
+    fn test_todo_all() {
         let text = "todo text".to_string();
         let id = 1;
         let expected = Todo::new(id, text.clone());
@@ -165,7 +165,7 @@ mod test {
     }
 
     #[test]
-    fn todo_update() {
+    fn test_todo_update() {
         let text = "todo text".to_string();
         let id = 1;
         let repository = TodoRepositoryForMemory::new();
@@ -192,7 +192,7 @@ mod test {
     }
 
     #[test]
-    fn todo_delete() {
+    fn test_todo_delete() {
         let text = "todo text".to_string();
         let id = 1;
         let repository = TodoRepositoryForMemory::new();
