@@ -6,7 +6,8 @@ use axum::routing::{get, patch, post};
 use axum::routing::Router;
 
 use crate::handlers::{all_todo, create_todo, delete_todo, find_todo, update_todo};
-use crate::repositories::{HashMapRepository, TodoRepository};
+use crate::repositories::hash_map_repository::HashMapRepository;
+use crate::repositories::TodoRepository;
 
 mod handlers;
 mod repositories;
