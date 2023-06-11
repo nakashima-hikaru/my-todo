@@ -1,13 +1,15 @@
-mod handlers;
-mod repositories;
-
-use crate::handlers::{all_todo, create_todo, delete_todo, find_todo, update_todo};
-use crate::repositories::{TodoRepository, TodoRepositoryForMemory};
-use axum::routing::Router;
-use axum::routing::{get, patch, post};
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
+
+use axum::routing::{get, patch, post};
+use axum::routing::Router;
+
+use crate::handlers::{all_todo, create_todo, delete_todo, find_todo, update_todo};
+use crate::repositories::{TodoRepository, TodoRepositoryForMemory};
+
+mod handlers;
+mod repositories;
 
 #[tokio::main]
 async fn main() -> Result<(), hyper::Error> {
@@ -44,7 +46,6 @@ async fn root() -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::body::Body;
     use axum::http;
     use axum::http::{header, Method, StatusCode};
@@ -52,9 +53,11 @@ mod tests {
     use http::Request;
     use serde::Deserialize;
     use serde_json::json;
+    use tower::ServiceExt;
 
     use crate::repositories::{CreateTodo, Todo};
-    use tower::ServiceExt;
+
+    use super::*;
 
     fn build_request_with_json(path: &str, method: Method, json_body: String) -> Request<Body> {
         Request::builder()
@@ -118,12 +121,9 @@ mod tests {
         let body = json!({
             "text": text,
             "completed": false
-        }).to_string();
-        let req = build_request_with_json(
-            "/todos",
-            Method::POST,
-            body,
-        );
+        })
+            .to_string();
+        let req = build_request_with_json("/todos", Method::POST, body);
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         let _ = response_to_result::<Todo>(res).await;
     }
@@ -133,7 +133,10 @@ mod tests {
         let expected = Todo::new(1, "should_update_todo".to_string());
 
         let repository = TodoRepositoryForMemory::new();
-        repository.create(CreateTodo::new("before_update_todo".to_string()));
+        repository
+            .create(CreateTodo::new("before_update_todo".to_string()))
+            .await
+            .expect("failed to create todo");
         let req = build_request_with_json(
             "/todos/1",
             Method::PATCH,
@@ -148,7 +151,10 @@ mod tests {
     async fn get_all_todos() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
-        repository.create(payload);
+        repository
+            .create(payload)
+            .await
+            .expect("failed to create todo");
         let req = build_request_with_json("/todos", Method::GET, String::default());
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         let todo = response_to_result::<Vec<Todo>>(res).await;
@@ -159,7 +165,10 @@ mod tests {
     async fn find_todos() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
-        repository.create(payload);
+        repository
+            .create(payload)
+            .await
+            .expect("failed to create todo");
         let req = build_request_with_json("/todos/1", Method::GET, String::default());
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         let todo = response_to_result::<Todo>(res).await;
@@ -170,7 +179,10 @@ mod tests {
     async fn not_found_todos() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
-        repository.create(payload);
+        repository
+            .create(payload)
+            .await
+            .expect("failed to create todo");
         let req = build_request_with_json("/todos/2", Method::GET, String::default());
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::NOT_FOUND, res.status());
@@ -183,7 +195,10 @@ mod tests {
     async fn delete_todo() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
-        repository.create(payload);
+        repository
+            .create(payload)
+            .await
+            .expect("failed to create todo");
         let req = build_request_with_json("/todos/1", Method::DELETE, String::default());
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::NO_CONTENT, res.status());
@@ -193,7 +208,10 @@ mod tests {
     async fn not_deleted_todo() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
-        repository.create(payload);
+        repository
+            .create(payload)
+            .await
+            .expect("failed to create todo");
         let req = build_request_with_json("/todos/2", Method::DELETE, String::default());
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::NOT_FOUND, res.status());
