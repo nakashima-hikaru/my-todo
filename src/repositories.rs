@@ -131,7 +131,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_todo_create() {
+    fn todo_create() {
         let text = "todo text".to_string();
         let id = 1;
         let expected = Todo::new(id, text.clone());
@@ -142,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn test_todo_find() {
+    fn todo_find() {
         let text = "todo text".to_string();
         let id = 1;
         let expected = Todo::new(id, text.clone());
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn test_todo_all() {
+    fn todo_all() {
         let text = "todo text".to_string();
         let id = 1;
         let expected = Todo::new(id, text.clone());
@@ -165,7 +165,7 @@ mod tests {
     }
 
     #[test]
-    fn test_todo_update() {
+    fn todo_update() {
         let text = "todo text".to_string();
         let id = 1;
         let repository = TodoRepositoryForMemory::new();
@@ -192,7 +192,7 @@ mod tests {
     }
 
     #[test]
-    fn test_todo_delete() {
+    fn todo_delete() {
         let text = "todo text".to_string();
         let id = 1;
         let repository = TodoRepositoryForMemory::new();

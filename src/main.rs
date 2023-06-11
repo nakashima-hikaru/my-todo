@@ -73,7 +73,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_hello_world() {
+    async fn hello_world() {
         let req = Request::builder().uri("/").body(Body::empty()).unwrap();
         let repository = TodoRepositoryForMemory::new();
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
@@ -84,7 +84,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_create_todo() {
+    async fn create_todo() {
         let repository = TodoRepositoryForMemory::new();
         let req = build_request_with_json(
             "/todos",
@@ -99,7 +99,7 @@ mod tests {
 
     #[tokio::test]
     #[should_panic]
-    async fn test_post_validation_empty() {
+    async fn post_validation_empty() {
         let repository = TodoRepositoryForMemory::new();
         let req = build_request_with_json(
             "/todos",
@@ -112,7 +112,7 @@ mod tests {
 
     #[tokio::test]
     #[should_panic]
-    async fn test_post_validation_too_long_text() {
+    async fn post_validation_too_long_text() {
         let repository = TodoRepositoryForMemory::new();
         let text = "a".repeat(101);
         let body = json!({
@@ -129,7 +129,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_update_todo() {
+    async fn update_todo() {
         let expected = Todo::new(1, "should_update_todo".to_string());
 
         let repository = TodoRepositoryForMemory::new();
@@ -145,7 +145,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_get_all_todos() {
+    async fn get_all_todos() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);
@@ -156,7 +156,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_find_todos() {
+    async fn find_todos() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);
@@ -167,7 +167,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_not_found_todos() {
+    async fn not_found_todos() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);
@@ -180,7 +180,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_todo() {
+    async fn delete_todo() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);
@@ -190,7 +190,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_not_deleted_todo() {
+    async fn not_deleted_todo() {
         let payload = CreateTodo::new("temp".to_string());
         let repository = TodoRepositoryForMemory::new();
         repository.create(payload);
