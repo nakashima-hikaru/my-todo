@@ -18,3 +18,5 @@ tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 anyhow = "1.0.71"
 thiserror = "1.0.40"
 validator = { version = "0.16.0", features = ["derive"] }
+sqlx = { version = "0.7.0-alpha.3", features = ["runtime-tokio-rustls", "any", "postgres"] }
+dotenv = "0.15.0"

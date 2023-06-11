@@ -1,12 +1,15 @@
-use crate::repositories::{CreateTodo, TodoRepository, UpdateTodo};
-use axum::extract::{FromRequest, Path};
-use axum::{async_trait, BoxError, extract::State, http::StatusCode, Json, response::IntoResponse};
 use std::sync::Arc;
+
+use axum::{async_trait, BoxError, extract::State, http::StatusCode, Json, response::IntoResponse};
 use axum::body::HttpBody;
+use axum::extract::{FromRequest, Path};
 use axum::http::Request;
 use serde::de::DeserializeOwned;
 use validator::Validate;
 
+use crate::repositories::{CreateTodo, TodoRepository, UpdateTodo};
+
+// todo: refine error propagation (error messages in `from_request` seems to be vanished)
 #[derive(Debug)]
 pub struct ValidatedJson<T>(T);
 
