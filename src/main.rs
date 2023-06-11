@@ -6,7 +6,7 @@ use axum::routing::{get, patch, post};
 use axum::routing::Router;
 
 use crate::handlers::{all_todo, create_todo, delete_todo, find_todo, update_todo};
-use crate::repositories::{TodoRepository, TodoRepositoryForMemory};
+use crate::repositories::{HashMapRepository, TodoRepository};
 
 mod handlers;
 mod repositories;
@@ -16,7 +16,7 @@ async fn main() -> Result<(), hyper::Error> {
     let log_level = env::var("RUST_LOG").unwrap_or("debug".to_string());
     env::set_var("RUST_LOG", log_level);
     tracing_subscriber::fmt::init();
-    let repository = TodoRepositoryForMemory::new();
+    let repository = HashMapRepository::new();
     let app = create_app(repository.into());
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {}", addr);
@@ -78,7 +78,7 @@ mod tests {
     #[tokio::test]
     async fn hello_world() {
         let req = Request::builder().uri("/").body(Body::empty()).unwrap();
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
 
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
@@ -88,7 +88,7 @@ mod tests {
 
     #[tokio::test]
     async fn create_todo() {
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         let req = build_request_with_json(
             "/todos",
             Method::POST,
@@ -103,7 +103,7 @@ mod tests {
     #[tokio::test]
     #[should_panic]
     async fn post_validation_empty() {
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         let req = build_request_with_json(
             "/todos",
             Method::POST,
@@ -116,7 +116,7 @@ mod tests {
     #[tokio::test]
     #[should_panic]
     async fn post_validation_too_long_text() {
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         let text = "a".repeat(101);
         let body = json!({
             "text": text,
@@ -132,7 +132,7 @@ mod tests {
     async fn update_todo() {
         let expected = Todo::new(1, "should_update_todo".to_string());
 
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         repository
             .create(CreateTodo::new("before_update_todo".to_string()))
             .await
@@ -150,7 +150,7 @@ mod tests {
     #[tokio::test]
     async fn get_all_todos() {
         let payload = CreateTodo::new("temp".to_string());
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
@@ -164,7 +164,7 @@ mod tests {
     #[tokio::test]
     async fn find_todos() {
         let payload = CreateTodo::new("temp".to_string());
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
@@ -178,7 +178,7 @@ mod tests {
     #[tokio::test]
     async fn not_found_todos() {
         let payload = CreateTodo::new("temp".to_string());
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
@@ -194,7 +194,7 @@ mod tests {
     #[tokio::test]
     async fn delete_todo() {
         let payload = CreateTodo::new("temp".to_string());
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
@@ -207,7 +207,7 @@ mod tests {
     #[tokio::test]
     async fn not_deleted_todo() {
         let payload = CreateTodo::new("temp".to_string());
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await

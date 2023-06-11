@@ -67,13 +67,13 @@ impl Todo {
 type TodoData = HashMap<i32, Todo>;
 
 #[derive(Debug, Clone)]
-pub struct TodoRepositoryForMemory {
+pub struct HashMapRepository {
     store: Arc<RwLock<TodoData>>,
 }
 
-impl TodoRepositoryForMemory {
+impl HashMapRepository {
     pub fn new() -> Self {
-        TodoRepositoryForMemory {
+        HashMapRepository {
             store: Arc::default(),
         }
     }
@@ -88,7 +88,7 @@ impl TodoRepositoryForMemory {
 }
 
 #[async_trait]
-impl TodoRepository for TodoRepositoryForMemory {
+impl TodoRepository for HashMapRepository {
     async fn create(&self, payload: CreateTodo) -> anyhow::Result<Todo> {
         let mut store = self.write_store_ref();
         let id = (store.len() + 1) as i32;
@@ -144,7 +144,7 @@ mod tests {
         let id = 1;
         let expected = Todo::new(id, text.clone());
 
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         let todo = repository.create(CreateTodo { text }).await.unwrap();
         assert_eq!(expected, todo);
     }
@@ -155,7 +155,7 @@ mod tests {
         let id = 1;
         let expected = Todo::new(id, text.clone());
 
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         repository
             .create(CreateTodo { text })
             .await
@@ -169,7 +169,7 @@ mod tests {
         let text = "todo text".to_string();
         let id = 1;
         let expected = Todo::new(id, text.clone());
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         let _ = repository
             .create(CreateTodo { text })
             .await
@@ -182,7 +182,7 @@ mod tests {
     async fn todo_update() {
         let text = "todo text".to_string();
         let id = 1;
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         let _ = repository
             .create(CreateTodo { text: text.clone() })
             .await
@@ -213,7 +213,7 @@ mod tests {
     async fn todo_delete() {
         let text = "todo text".to_string();
         let id = 1;
-        let repository = TodoRepositoryForMemory::new();
+        let repository = HashMapRepository::new();
         let _ = repository
             .create(CreateTodo { text: text.clone() })
             .await
