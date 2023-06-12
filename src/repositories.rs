@@ -1,13 +1,17 @@
 use axum::async_trait;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use thiserror::Error;
 use validator::Validate;
 
 pub mod hash_map_repository;
+pub mod database_repository;
 
 #[derive(Debug, Error)]
 enum RepositoryError {
-    #[error("NotFound, id is {0}")]
+    #[error("Unexpected error: [{0}]")]
+    Unexpected(String),
+    #[error("NotFound, id: {0}")]
     NotFound(i32),
 }
 
@@ -20,7 +24,7 @@ pub trait TodoRepository: Clone + Send + Sync + 'static {
     async fn delete(&self, id: i32) -> anyhow::Result<()>;
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, FromRow)]
 pub struct Todo {
     pub id: i32,
     pub text: String,
@@ -49,6 +53,7 @@ pub struct UpdateTodo {
     completed: Option<bool>,
 }
 
+#[cfg(test)]
 impl Todo {
     pub fn new(id: i32, text: String) -> Self {
         Self {

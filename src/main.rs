@@ -4,9 +4,11 @@ use std::sync::Arc;
 
 use axum::routing::{get, patch, post};
 use axum::routing::Router;
+use dotenv::dotenv;
+use sqlx::PgPool;
 
 use crate::handlers::{all_todo, create_todo, delete_todo, find_todo, update_todo};
-use crate::repositories::hash_map_repository::HashMapRepository;
+use crate::repositories::database_repository::DatabaseRepository;
 use crate::repositories::TodoRepository;
 
 mod handlers;
@@ -17,7 +19,11 @@ async fn main() -> Result<(), hyper::Error> {
     let log_level = env::var("RUST_LOG").unwrap_or("debug".to_string());
     env::set_var("RUST_LOG", log_level);
     tracing_subscriber::fmt::init();
-    let repository = HashMapRepository::new();
+    dotenv().ok();
+    let database_url = &env::var("DATABASE_URL").expect("DATABASE_URL must be defined");
+    tracing::debug!("start connecting to the database...");
+    let pool = PgPool::connect(database_url).await.unwrap_or_else(|_| panic!("failed to connect to the database whose url is: [{}]", database_url));
+    let repository = DatabaseRepository::new(pool);
     let app = create_app(repository.into());
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {}", addr);
@@ -57,6 +63,7 @@ mod tests {
     use tower::ServiceExt;
 
     use crate::repositories::{CreateTodo, Todo};
+    use crate::repositories::hash_map_repository::test_utils::HashMapRepository;
 
     use super::*;
 
