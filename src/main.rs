@@ -2,8 +2,8 @@ use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::routing::{get, patch, post};
 use axum::routing::Router;
+use axum::routing::{get, patch, post};
 use dotenv::dotenv;
 use sqlx::PgPool;
 
@@ -16,13 +16,18 @@ mod repositories;
 
 #[tokio::main]
 async fn main() -> Result<(), hyper::Error> {
+    dotenv().ok();
     let log_level = env::var("RUST_LOG").unwrap_or("debug".to_string());
     env::set_var("RUST_LOG", log_level);
     tracing_subscriber::fmt::init();
-    dotenv().ok();
     let database_url = &env::var("DATABASE_URL").expect("DATABASE_URL must be defined");
     tracing::debug!("start connecting to the database...");
-    let pool = PgPool::connect(database_url).await.unwrap_or_else(|_| panic!("failed to connect to the database whose url is: [{}]", database_url));
+    let pool = PgPool::connect(database_url).await.unwrap_or_else(|_| {
+        panic!(
+            "failed to connect to the database whose url is: [{}]",
+            database_url
+        )
+    });
     let repository = DatabaseRepository::new(pool);
     let app = create_app(repository.into());
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -62,8 +67,8 @@ mod tests {
     use serde_json::json;
     use tower::ServiceExt;
 
-    use crate::repositories::{CreateTodo, Todo};
     use crate::repositories::hash_map_repository::test_utils::HashMapRepository;
+    use crate::repositories::{CreateTodo, Todo};
 
     use super::*;
 
@@ -88,6 +93,7 @@ mod tests {
         let req = Request::builder().uri("/").body(Body::empty()).unwrap();
         let repository = HashMapRepository::new();
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        assert_eq!(StatusCode::OK, res.status());
 
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
         let body: String = String::from_utf8(bytes.to_vec()).unwrap();
@@ -103,13 +109,13 @@ mod tests {
             r#"{"text": "todo","completed": false}"#.to_string(),
         );
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        assert_eq!(StatusCode::CREATED, res.status());
         let todo = response_to_result::<Todo>(res).await;
         let expected = Todo::new(1, "todo".to_string());
         assert_eq!(expected, todo);
     }
 
     #[tokio::test]
-    #[should_panic]
     async fn post_validation_empty() {
         let repository = HashMapRepository::new();
         let req = build_request_with_json(
@@ -118,11 +124,13 @@ mod tests {
             r#"{"text": "","completed": false}"#.to_string(),
         );
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
-        let _ = response_to_result::<Todo>(res).await;
+        assert_eq!(StatusCode::BAD_REQUEST, res.status());
+        let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
+        let body: String = String::from_utf8(bytes.to_vec()).unwrap();
+        assert_eq!("Validation error: [text: text must not be empty]", body);
     }
 
     #[tokio::test]
-    #[should_panic]
     async fn post_validation_too_long_text() {
         let repository = HashMapRepository::new();
         let text = "a".repeat(101);
@@ -130,10 +138,16 @@ mod tests {
             "text": text,
             "completed": false
         })
-            .to_string();
+        .to_string();
         let req = build_request_with_json("/todos", Method::POST, body);
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
-        let _ = response_to_result::<Todo>(res).await;
+        assert_eq!(StatusCode::BAD_REQUEST, res.status());
+        let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
+        let body: String = String::from_utf8(bytes.to_vec()).unwrap();
+        assert_eq!(
+            "Validation error: [text: text length exceeds the limit]",
+            body
+        );
     }
 
     #[tokio::test]
@@ -151,6 +165,7 @@ mod tests {
             r#"{"text": "should_update_todo","completed": false}"#.to_string(),
         );
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        assert_eq!(StatusCode::CREATED, res.status());
         let todo = response_to_result::<Todo>(res).await;
         assert_eq!(expected, todo);
     }
@@ -179,6 +194,7 @@ mod tests {
             .expect("failed to create todo");
         let req = build_request_with_json("/todos/1", Method::GET, String::default());
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
+        assert_eq!(StatusCode::OK, res.status());
         let todo = response_to_result::<Todo>(res).await;
         assert_eq!(Todo::new(1, "temp".to_string()), todo);
     }
