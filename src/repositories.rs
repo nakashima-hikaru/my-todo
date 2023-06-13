@@ -4,8 +4,8 @@ use sqlx::FromRow;
 use thiserror::Error;
 use validator::Validate;
 
-pub mod hash_map_repository;
 pub mod database_repository;
+pub mod hash_map_repository;
 
 #[derive(Debug, Error)]
 enum RepositoryError {
