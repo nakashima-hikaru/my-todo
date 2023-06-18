@@ -17,26 +17,28 @@ impl DatabaseRepository {
 #[async_trait]
 impl TodoRepository for DatabaseRepository {
     async fn create(&self, payload: CreateTodo) -> anyhow::Result<Todo> {
-        let todo = sqlx::query_as(
+        let todo = sqlx::query_as!(
+            Todo,
             r#"
             insert into todos (text, completed) values ($1, false)
             returning *
             "#,
+            payload.text,
         )
-        .bind(payload.text)
         .fetch_one(&self.pool)
         .await?;
         Ok(todo)
     }
 
     async fn find(&self, id: i32) -> anyhow::Result<Todo> {
-        let todo = sqlx::query_as(
+        let todo = sqlx::query_as!(
+            Todo,
             r#"
             select * from todos
             where id = $1
             "#,
+            id,
         )
-        .bind(id)
         .fetch_one(&self.pool)
         .await
         .map_err(|e| match e {
@@ -47,7 +49,8 @@ impl TodoRepository for DatabaseRepository {
     }
 
     async fn all(&self) -> anyhow::Result<Vec<Todo>> {
-        let todo = sqlx::query_as(
+        let todo = sqlx::query_as!(
+            Todo,
             r#"
             select * from todos
             order by id desc
@@ -60,7 +63,8 @@ impl TodoRepository for DatabaseRepository {
 
     async fn update(&self, id: i32, payload: UpdateTodo) -> anyhow::Result<Todo> {
         let old_todo = self.find(id).await?;
-        let todo = sqlx::query_as(
+        let todo = sqlx::query_as!(
+            Todo,
             r#"
             update todos
             set
@@ -68,23 +72,23 @@ impl TodoRepository for DatabaseRepository {
             where id = $3
             returning *
             "#,
+            payload.text.unwrap_or(old_todo.text),
+            payload.completed.unwrap_or(old_todo.completed),
+            id,
         )
-        .bind(payload.text.unwrap_or(old_todo.text))
-        .bind(payload.completed.unwrap_or(old_todo.completed))
-        .bind(id)
         .fetch_one(&self.pool)
         .await?;
         Ok(todo)
     }
 
     async fn delete(&self, id: i32) -> anyhow::Result<()> {
-        sqlx::query(
+        sqlx::query!(
             r#"
             delete from todos
             where id = $1
             "#,
+            id,
         )
-        .bind(id)
         .execute(&self.pool)
         .await
         .map_err(|e| match e {

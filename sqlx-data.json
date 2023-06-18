@@ -1,0 +1,143 @@
+{
+  "db": "PostgreSQL",
+  "3875a528eff84759c72801a4035d5746ef9ecf3c7b6dc97e32a0166201a23154": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "text",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "completed",
+          "ordinal": 2,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            insert into todos (text, completed) values ($1, false)\n            returning *\n            "
+  },
+  "5d87b601b325cef9dc39c3d3d80e9c001ae61f67954f54541078dfb44a7ee9b5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "text",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "completed",
+          "ordinal": 2,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            select * from todos\n            where id = $1\n            "
+  },
+  "d6d6f6a9d165d15da16fda3d122ab2200ae94821d26cdec55a74870642e93940": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            delete from todos\n            where id = $1\n            "
+  },
+  "e4e2a590ba5109fccc15be2c842841229c4a368379c0e6c8bd0908c338adb87e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "text",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "completed",
+          "ordinal": 2,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Bool",
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            update todos\n            set\n            text = $1, completed = $2\n            where id = $3\n            returning *\n            "
+  },
+  "e5f0a7c0af34cbff6da3ec4647248cc4a20c1167915511d825bcde0656f8a92c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "text",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "completed",
+          "ordinal": 2,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "\n            select * from todos\n            order by id desc\n            "
+  }
+}
