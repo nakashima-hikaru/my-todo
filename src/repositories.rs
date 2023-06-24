@@ -4,8 +4,8 @@ use sqlx::FromRow;
 use thiserror::Error;
 use validator::Validate;
 
-pub mod database_repository;
-pub mod hash_map_repository;
+pub(crate) mod database_repository;
+pub(crate) mod hash_map_repository;
 
 #[derive(Debug, Error)]
 enum RepositoryError {
@@ -16,7 +16,7 @@ enum RepositoryError {
 }
 
 #[async_trait]
-pub trait TodoRepository: Clone + Send + Sync + 'static {
+pub(crate) trait TodoRepository: Clone + Send + Sync + 'static {
     async fn create(&self, payload: CreateTodo) -> anyhow::Result<Todo>;
     async fn find(&self, id: i32) -> anyhow::Result<Todo>;
     async fn all(&self) -> anyhow::Result<Vec<Todo>>;
@@ -25,14 +25,14 @@ pub trait TodoRepository: Clone + Send + Sync + 'static {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, FromRow)]
-pub struct Todo {
-    pub id: i32,
-    pub text: String,
-    pub completed: bool,
+pub(crate) struct Todo {
+    pub(crate) id: i32,
+    pub(crate) text: String,
+    pub(crate) completed: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Validate)]
-pub struct CreateTodo {
+pub(crate) struct CreateTodo {
     #[validate(length(min = 1, message = "text must not be empty"))]
     #[validate(length(max = 100, message = "text length exceeds the limit"))]
     text: String,
@@ -40,13 +40,13 @@ pub struct CreateTodo {
 
 #[cfg(test)]
 impl CreateTodo {
-    pub fn new(text: String) -> Self {
+    pub(crate) fn new(text: String) -> Self {
         Self { text }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Validate)]
-pub struct UpdateTodo {
+pub(crate) struct UpdateTodo {
     #[validate(length(min = 1, message = "text must not be empty"))]
     #[validate(length(max = 100, message = "text length exceeds the limit"))]
     text: Option<String>,
@@ -55,7 +55,7 @@ pub struct UpdateTodo {
 
 #[cfg(test)]
 impl Todo {
-    pub fn new(id: i32, text: String) -> Self {
+    pub(crate) fn new(id: i32, text: String) -> Self {
         Self {
             id,
             text,

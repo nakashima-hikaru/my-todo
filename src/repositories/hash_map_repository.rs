@@ -1,5 +1,5 @@
 #[cfg(test)]
-pub mod test_utils {
+pub(crate) mod test_utils {
     use std::collections::HashMap;
     use std::sync::{Arc, RwLock};
     use std::sync::{RwLockReadGuard, RwLockWriteGuard};
@@ -12,12 +12,12 @@ pub mod test_utils {
     type TodoData = HashMap<i32, Todo>;
 
     #[derive(Debug, Clone)]
-    pub struct HashMapRepository {
+    pub(crate) struct HashMapRepository {
         store: Arc<RwLock<TodoData>>,
     }
 
     impl HashMapRepository {
-        pub fn new() -> Self {
+        pub(crate) fn new() -> Self {
             HashMapRepository {
                 store: Arc::default(),
             }
@@ -52,7 +52,6 @@ pub mod test_utils {
         }
 
         async fn all(&self) -> anyhow::Result<Vec<Todo>> {
-            // Result<Vec<Todo>, !>
             Ok(self.read_store_ref().values().cloned().collect())
         }
 

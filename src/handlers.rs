@@ -10,7 +10,7 @@ use validator::Validate;
 use crate::repositories::{CreateTodo, TodoRepository, UpdateTodo};
 
 #[derive(Debug)]
-pub struct ValidatedJson<T>(T);
+pub(crate) struct ValidatedJson<T>(T);
 
 #[async_trait]
 impl<T, S, B> FromRequest<S, B> for ValidatedJson<T>
@@ -38,7 +38,7 @@ where
     }
 }
 
-pub async fn create_todo<T: TodoRepository>(
+pub(crate) async fn create_todo<T: TodoRepository>(
     State(repository): State<Arc<T>>,
     ValidatedJson(payload): ValidatedJson<CreateTodo>,
 ) -> anyhow::Result<(StatusCode, impl IntoResponse), StatusCode> {
@@ -50,7 +50,7 @@ pub async fn create_todo<T: TodoRepository>(
     Ok((StatusCode::CREATED, Json(todo)))
 }
 
-pub async fn update_todo<T: TodoRepository>(
+pub(crate) async fn update_todo<T: TodoRepository>(
     Path(id): Path<i32>,
     State(repository): State<Arc<T>>,
     ValidatedJson(payload): ValidatedJson<UpdateTodo>,
@@ -62,14 +62,14 @@ pub async fn update_todo<T: TodoRepository>(
     Ok((StatusCode::CREATED, Json(todo)))
 }
 
-pub async fn all_todo<T: TodoRepository>(
+pub(crate) async fn all_todo<T: TodoRepository>(
     State(repository): State<Arc<T>>,
 ) -> anyhow::Result<(StatusCode, impl IntoResponse), StatusCode> {
     let todo = repository.all().await.unwrap();
     Ok((StatusCode::OK, Json(todo)))
 }
 
-pub async fn find_todo<T: TodoRepository>(
+pub(crate) async fn find_todo<T: TodoRepository>(
     Path(id): Path<i32>,
     State(repository): State<Arc<T>>,
 ) -> Result<(StatusCode, impl IntoResponse), StatusCode> {
@@ -77,7 +77,7 @@ pub async fn find_todo<T: TodoRepository>(
     Ok((StatusCode::OK, Json(todo)))
 }
 
-pub async fn delete_todo<T: TodoRepository>(
+pub(crate) async fn delete_todo<T: TodoRepository>(
     Path(id): Path<i32>,
     State(repository): State<Arc<T>>,
 ) -> StatusCode {

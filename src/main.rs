@@ -15,7 +15,7 @@ mod handlers;
 mod repositories;
 
 #[tokio::main]
-async fn main() -> Result<(), hyper::Error> {
+async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     let log_level = env::var("RUST_LOG").unwrap_or("debug".to_string());
     env::set_var("RUST_LOG", log_level);
@@ -33,9 +33,9 @@ async fn main() -> Result<(), hyper::Error> {
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {}", addr);
     tracing::debug!("http://localhost:3000");
-    axum::Server::bind(&addr)
+    Ok(axum::Server::bind(&addr)
         .serve(app.into_make_service())
-        .await
+        .await?)
 }
 
 fn create_app<T: TodoRepository>(repository: Arc<T>) -> Router {
@@ -63,6 +63,7 @@ mod tests {
     use axum::http::{header, Method, StatusCode};
     use axum::response::Response;
     use http::Request;
+    use hyper::body::to_bytes;
     use serde::Deserialize;
     use serde_json::json;
     use tower::ServiceExt;
@@ -82,9 +83,9 @@ mod tests {
     }
 
     async fn response_to_result<T: for<'a> Deserialize<'a>>(res: Response) -> T {
-        let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
-        let body: String = String::from_utf8(bytes.to_vec()).unwrap();
-        let todo: T = serde_json::from_str(&body).unwrap();
+        let bytes = to_bytes(res.into_body()).await.unwrap();
+        let body = String::from_utf8(bytes.to_vec()).unwrap();
+        let todo = serde_json::from_str(&body).unwrap();
         todo
     }
 
@@ -95,8 +96,8 @@ mod tests {
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::OK, res.status());
 
-        let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
-        let body: String = String::from_utf8(bytes.to_vec()).unwrap();
+        let bytes = to_bytes(res.into_body()).await.unwrap();
+        let body = String::from_utf8(bytes.to_vec()).unwrap();
         assert_eq!(body, "Hello, World!");
     }
 
@@ -126,7 +127,7 @@ mod tests {
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::BAD_REQUEST, res.status());
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
-        let body: String = String::from_utf8(bytes.to_vec()).unwrap();
+        let body = String::from_utf8(bytes.to_vec()).unwrap();
         assert_eq!("Validation error: [text: text must not be empty]", body);
     }
 
@@ -143,7 +144,7 @@ mod tests {
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::BAD_REQUEST, res.status());
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
-        let body: String = String::from_utf8(bytes.to_vec()).unwrap();
+        let body = String::from_utf8(bytes.to_vec()).unwrap();
         assert_eq!(
             "Validation error: [text: text length exceeds the limit]",
             body

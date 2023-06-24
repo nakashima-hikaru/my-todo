@@ -4,12 +4,12 @@ use sqlx::PgPool;
 use crate::repositories::{CreateTodo, RepositoryError, Todo, TodoRepository, UpdateTodo};
 
 #[derive(Debug, Clone)]
-pub struct DatabaseRepository {
+pub(crate) struct DatabaseRepository {
     pool: PgPool,
 }
 
 impl DatabaseRepository {
-    pub fn new(pool: PgPool) -> Self {
+    pub(crate) fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
