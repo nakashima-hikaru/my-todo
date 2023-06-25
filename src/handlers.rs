@@ -45,7 +45,7 @@ pub(crate) async fn create_todo<T: TodoRepository>(
     let todo = repository
         .create(payload)
         .await
-        .or(Err(StatusCode::NOT_FOUND))?;
+        .map_err(|_| StatusCode::NOT_FOUND)?;
 
     Ok((StatusCode::CREATED, Json(todo)))
 }
@@ -58,7 +58,7 @@ pub(crate) async fn update_todo<T: TodoRepository>(
     let todo = repository
         .update(id, payload)
         .await
-        .or(Err(StatusCode::NOT_FOUND))?;
+        .map_err(|_| StatusCode::NOT_FOUND)?;
     Ok((StatusCode::CREATED, Json(todo)))
 }
 
@@ -73,7 +73,10 @@ pub(crate) async fn find_todo<T: TodoRepository>(
     Path(id): Path<i32>,
     State(repository): State<Arc<T>>,
 ) -> Result<(StatusCode, impl IntoResponse), StatusCode> {
-    let todo = repository.find(id).await.or(Err(StatusCode::NOT_FOUND))?;
+    let todo = repository
+        .find(id)
+        .await
+        .map_err(|_| StatusCode::NOT_FOUND)?;
     Ok((StatusCode::OK, Json(todo)))
 }
 
