@@ -73,13 +73,16 @@ mod tests {
 
     use super::*;
 
-    fn build_request_with_json(path: &str, method: Method, json_body: String) -> Request<Body> {
-        Request::builder()
+    fn build_request_with_json(
+        path: &str,
+        method: Method,
+        json_body: String,
+    ) -> http::Result<Request<Body>> {
+        Ok(Request::builder()
             .uri(path)
             .method(method)
             .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-            .body(Body::from(json_body))
-            .unwrap()
+            .body(Body::from(json_body))?)
     }
 
     async fn response_to_result<T: for<'a> Deserialize<'a>>(res: Response) -> T {
@@ -102,37 +105,39 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn create_todo() {
+    async fn create_todo() -> http::Result<()> {
         let repository = HashMapRepository::new();
         let req = build_request_with_json(
             "/todos",
             Method::POST,
             r#"{"text": "todo","completed": false}"#.to_string(),
-        );
+        )?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::CREATED, res.status());
         let todo = response_to_result::<Todo>(res).await;
         let expected = Todo::new(1, "todo".to_string());
         assert_eq!(expected, todo);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn post_validation_empty() {
+    async fn post_validation_empty() -> http::Result<()> {
         let repository = HashMapRepository::new();
         let req = build_request_with_json(
             "/todos",
             Method::POST,
             r#"{"text": "","completed": false}"#.to_string(),
-        );
+        )?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::BAD_REQUEST, res.status());
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
         let body = String::from_utf8(bytes.to_vec()).unwrap();
         assert_eq!("Validation error: [text: text must not be empty]", body);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn post_validation_too_long_text() {
+    async fn post_validation_too_long_text() -> http::Result<()> {
         let repository = HashMapRepository::new();
         let text = "a".repeat(101);
         let body = json!({
@@ -140,7 +145,7 @@ mod tests {
             "completed": false
         })
         .to_string();
-        let req = build_request_with_json("/todos", Method::POST, body);
+        let req = build_request_with_json("/todos", Method::POST, body)?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::BAD_REQUEST, res.status());
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
@@ -149,10 +154,11 @@ mod tests {
             "Validation error: [text: text length exceeds the limit]",
             body
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn update_todo() {
+    async fn update_todo() -> http::Result<()> {
         let expected = Todo::new(1, "should_update_todo".to_string());
 
         let repository = HashMapRepository::new();
@@ -164,81 +170,87 @@ mod tests {
             "/todos/1",
             Method::PATCH,
             r#"{"text": "should_update_todo","completed": false}"#.to_string(),
-        );
+        )?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::CREATED, res.status());
         let todo = response_to_result::<Todo>(res).await;
         assert_eq!(expected, todo);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn get_all_todos() {
+    async fn get_all_todos() -> http::Result<()> {
         let payload = CreateTodo::new("temp".to_string());
         let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
             .expect("failed to create todo");
-        let req = build_request_with_json("/todos", Method::GET, String::default());
+        let req = build_request_with_json("/todos", Method::GET, String::default())?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         let todo = response_to_result::<Vec<Todo>>(res).await;
         assert_eq!(vec![Todo::new(1, "temp".to_string())], todo);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn find_todos() {
+    async fn find_todos() -> http::Result<()> {
         let payload = CreateTodo::new("temp".to_string());
         let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
             .expect("failed to create todo");
-        let req = build_request_with_json("/todos/1", Method::GET, String::default());
+        let req = build_request_with_json("/todos/1", Method::GET, String::default())?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::OK, res.status());
         let todo = response_to_result::<Todo>(res).await;
         assert_eq!(Todo::new(1, "temp".to_string()), todo);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn not_found_todos() {
+    async fn not_found_todos() -> http::Result<()> {
         let payload = CreateTodo::new("temp".to_string());
         let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
             .expect("failed to create todo");
-        let req = build_request_with_json("/todos/2", Method::GET, String::default());
+        let req = build_request_with_json("/todos/2", Method::GET, String::default())?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::NOT_FOUND, res.status());
         let bytes = hyper::body::to_bytes(res.into_body()).await.unwrap();
         let body: String = String::from_utf8(bytes.to_vec()).unwrap();
-        assert!(body.is_empty())
+        assert!(body.is_empty());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn delete_todo() {
+    async fn delete_todo() -> http::Result<()> {
         let payload = CreateTodo::new("temp".to_string());
         let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
             .expect("failed to create todo");
-        let req = build_request_with_json("/todos/1", Method::DELETE, String::default());
+        let req = build_request_with_json("/todos/1", Method::DELETE, String::default())?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::NO_CONTENT, res.status());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn not_deleted_todo() {
+    async fn not_deleted_todo() -> http::Result<()> {
         let payload = CreateTodo::new("temp".to_string());
         let repository = HashMapRepository::new();
         repository
             .create(payload)
             .await
             .expect("failed to create todo");
-        let req = build_request_with_json("/todos/2", Method::DELETE, String::default());
+        let req = build_request_with_json("/todos/2", Method::DELETE, String::default())?;
         let res = create_app(repository.into()).oneshot(req).await.unwrap();
         assert_eq!(StatusCode::NOT_FOUND, res.status());
+        Ok(())
     }
 }
