@@ -12,11 +12,11 @@ tokio = { version = "1.28.2", features = ["full"] }
 tower = "0.4.13"
 mime = "0.3.17"
 serde = { version = "1.0.164", features = ["derive"] }
-serde_json = "1.0.96"
+serde_json = "1.0.99"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 anyhow = "1.0.71"
 thiserror = "1.0.40"
-validator = { version = "0.16.0", features = ["derive"] }
+validator = { version = "0.16.1", features = ["derive"] }
 sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "postgres", "offline"] }
 dotenv = "0.15.0"

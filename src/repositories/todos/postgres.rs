@@ -1,27 +1,17 @@
 use axum::async_trait;
-use sqlx::PgPool;
 
-use crate::repositories::{CreateTodo, RepositoryError, Todo, TodoRepository, UpdateTodo};
-
-#[derive(Debug, Clone)]
-pub(crate) struct DatabaseRepository {
-    pool: PgPool,
-}
-
-impl DatabaseRepository {
-    pub(crate) fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+use crate::repositories::postgres::PostgresRepository;
+use crate::repositories::todos::{CreateTodo, Todo, TodoRepository, UpdateTodo};
+use crate::repositories::RepositoryError;
 
 #[async_trait]
-impl TodoRepository for DatabaseRepository {
+impl TodoRepository for PostgresRepository {
     async fn create(&self, payload: CreateTodo) -> anyhow::Result<Todo> {
         let todo = sqlx::query_as!(
             Todo,
             r#"
-            insert into todos (text, completed) values ($1, false)
-            returning *
+            INSERT INTO todos (text, completed) VALUES ($1, false)
+            RETURNING *
             "#,
             payload.text,
         )
@@ -34,15 +24,15 @@ impl TodoRepository for DatabaseRepository {
         let todo = sqlx::query_as!(
             Todo,
             r#"
-            select * from todos
-            where id = $1
+            SELECT * FROM todos
+            WHERE id = $1
             "#,
             id,
         )
         .fetch_one(&self.pool)
         .await
         .map_err(|e| match e {
-            sqlx::Error::RowNotFound => RepositoryError::NotFound(id),
+            sqlx::Error::RowNotFound => RepositoryError::NotFound("id".to_string(), id),
             _ => RepositoryError::Unexpected(e.to_string()),
         })?;
         Ok(todo)
@@ -52,8 +42,8 @@ impl TodoRepository for DatabaseRepository {
         let todo = sqlx::query_as!(
             Todo,
             r#"
-            select * from todos
-            order by id desc
+            SELECT * FROM todos
+            ORDER BY id DESC
             "#,
         )
         .fetch_all(&self.pool)
@@ -66,11 +56,11 @@ impl TodoRepository for DatabaseRepository {
         let todo = sqlx::query_as!(
             Todo,
             r#"
-            update todos
-            set
+            UPDATE todos
+            SET
             text = $1, completed = $2
-            where id = $3
-            returning *
+            WHERE id = $3
+            RETURNING *
             "#,
             payload.text.unwrap_or(old_todo.text),
             payload.completed.unwrap_or(old_todo.completed),
@@ -84,15 +74,15 @@ impl TodoRepository for DatabaseRepository {
     async fn delete(&self, id: i32) -> anyhow::Result<()> {
         sqlx::query!(
             r#"
-            delete from todos
-            where id = $1
+            DELETE FROM todos
+            WHERE id = $1
             "#,
             id,
         )
         .execute(&self.pool)
         .await
         .map_err(|e| match e {
-            sqlx::Error::RowNotFound => RepositoryError::NotFound(id),
+            sqlx::Error::RowNotFound => RepositoryError::NotFound("id".to_string(), id),
             _ => RepositoryError::Unexpected(e.to_string()),
         })?;
         Ok(())

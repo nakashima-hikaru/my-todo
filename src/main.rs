@@ -7,9 +7,9 @@ use axum::routing::{get, patch, post};
 use dotenv::dotenv;
 use sqlx::PgPool;
 
-use crate::handlers::{all_todo, create_todo, delete_todo, find_todo, update_todo};
-use crate::repositories::database_repository::DatabaseRepository;
-use crate::repositories::TodoRepository;
+use crate::handlers::todos::{all_todo, create_todo, delete_todo, find_todo, update_todo};
+use crate::repositories::postgres::PostgresRepository;
+use crate::repositories::todos::TodoRepository;
 
 mod handlers;
 mod repositories;
@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
             database_url
         )
     });
-    let repository = DatabaseRepository::new(pool);
+    let repository = PostgresRepository::new(pool);
     let app = create_app(repository.into());
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {}", addr);
@@ -68,8 +68,8 @@ mod tests {
     use serde_json::json;
     use tower::ServiceExt;
 
-    use crate::repositories::hash_map_repository::test_utils::HashMapRepository;
-    use crate::repositories::{CreateTodo, Todo};
+    use crate::repositories::hash_map::test_utils::HashMapRepository;
+    use crate::repositories::todos::{CreateTodo, Todo};
 
     use super::*;
 
@@ -78,11 +78,11 @@ mod tests {
         method: Method,
         json_body: String,
     ) -> http::Result<Request<Body>> {
-        Ok(Request::builder()
+        Request::builder()
             .uri(path)
             .method(method)
             .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-            .body(Body::from(json_body))?)
+            .body(Body::from(json_body))
     }
 
     async fn response_to_result<T: for<'a> Deserialize<'a>>(res: Response) -> T {

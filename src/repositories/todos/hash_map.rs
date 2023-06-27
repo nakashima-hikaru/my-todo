@@ -1,36 +1,11 @@
 #[cfg(test)]
 pub(crate) mod test_utils {
-    use std::collections::HashMap;
-    use std::sync::{Arc, RwLock};
-    use std::sync::{RwLockReadGuard, RwLockWriteGuard};
-
     use anyhow::Context;
     use axum::async_trait;
 
-    use crate::repositories::{CreateTodo, RepositoryError, Todo, TodoRepository, UpdateTodo};
-
-    type TodoData = HashMap<i32, Todo>;
-
-    #[derive(Debug, Clone)]
-    pub(crate) struct HashMapRepository {
-        store: Arc<RwLock<TodoData>>,
-    }
-
-    impl HashMapRepository {
-        pub(crate) fn new() -> Self {
-            HashMapRepository {
-                store: Arc::default(),
-            }
-        }
-
-        fn write_store_ref(&self) -> RwLockWriteGuard<TodoData> {
-            self.store.write().unwrap()
-        }
-
-        fn read_store_ref(&self) -> RwLockReadGuard<TodoData> {
-            self.store.read().unwrap()
-        }
-    }
+    use crate::repositories::hash_map::test_utils::HashMapRepository;
+    use crate::repositories::todos::{CreateTodo, Todo, TodoRepository, UpdateTodo};
+    use crate::repositories::RepositoryError;
 
     #[async_trait]
     impl TodoRepository for HashMapRepository {
@@ -47,7 +22,7 @@ pub(crate) mod test_utils {
             let todo = store
                 .get(&id)
                 .cloned()
-                .ok_or(RepositoryError::NotFound(id))?;
+                .ok_or(RepositoryError::NotFound("id".to_string(), id))?;
             Ok(todo)
         }
 
@@ -59,7 +34,7 @@ pub(crate) mod test_utils {
             let mut store = self.write_store_ref();
             let todo = store
                 .get(&id)
-                .with_context(|| RepositoryError::NotFound(id))?;
+                .with_context(|| RepositoryError::NotFound("id".to_string(), id))?;
             let text = payload.text.unwrap_or(todo.text.clone());
             let completed = payload.completed.unwrap_or(todo.completed);
             let todo = Todo {
@@ -73,13 +48,17 @@ pub(crate) mod test_utils {
 
         async fn delete(&self, id: i32) -> anyhow::Result<()> {
             let mut store = self.write_store_ref();
-            store.remove(&id).ok_or(RepositoryError::NotFound(id))?;
+            store
+                .remove(&id)
+                .ok_or(RepositoryError::NotFound("id".to_string(), id))?;
             Ok(())
         }
     }
 
     #[cfg(test)]
     mod tests {
+        use crate::repositories::todos::UpdateTodo;
+
         use super::*;
 
         #[tokio::test]
