@@ -21,7 +21,7 @@ jobs:
         with:
           crate: sqlx-cli
           version: 0.7.1
-          features: postgres
+          features: postgres,rustls
       - name: Build
         run: cargo build --verbose
       - name: Run lint
