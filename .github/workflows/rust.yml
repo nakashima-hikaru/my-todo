@@ -16,6 +16,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: baptiste0928/cargo-install@v1
+        name: Install sqlx-cli
+        with:
+          crate: sqlx-cli
+          version: 0.7.1
+          features: postgres
       - name: Build
         run: cargo build --verbose
       - name: Run lint
